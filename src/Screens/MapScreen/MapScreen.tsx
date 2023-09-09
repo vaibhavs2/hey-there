@@ -1,5 +1,12 @@
 import React, {useEffect, useState} from 'react';
-import {Alert, StyleSheet, TouchableOpacity} from 'react-native';
+import {
+  Alert,
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  Text,
+} from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import Mapbox from '@rnmapbox/maps';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -13,6 +20,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'MapScreen'>;
 export function MapScreen(props: Props) {
   const [getCurrentLocation, setCurrentLocation] = useState<Mapbox.Location>();
   const [userAroundMe, setUserAroundMe] = useState<Array<Position>>();
+  const [haveLocationPermission, setHaveLocationPermission] = useState(
+    Platform.select({android: false, default: true}),
+  );
   useEffect(() => {
     if (!getCurrentLocation) return;
     const {coords} = getCurrentLocation;
@@ -26,13 +36,16 @@ export function MapScreen(props: Props) {
   }, [getCurrentLocation?.timestamp]);
 
   useEffect(() => {
-    (async () => {
-      const locationPermission =
-        await Mapbox.requestAndroidLocationPermissions();
-      if (!locationPermission) {
-        Alert.alert('We need location permission');
-      }
-    })();
+    if (Platform.OS == 'android')
+      (async () => {
+        const locationPermission =
+          await Mapbox.requestAndroidLocationPermissions();
+        if (!locationPermission) {
+          Alert.alert('We need location permission');
+        } else {
+          setHaveLocationPermission(true);
+        }
+      })();
   }, []);
 
   const onMarkerPressed = (longitude: number, lattitude: number) => {
@@ -50,36 +63,44 @@ export function MapScreen(props: Props) {
       navigationTitle="see nearby people"
       SafeEdges={['top', 'left', 'right']}
       noDefaultPadding>
-      <Mapbox.MapView style={styles.map}>
-        {getCurrentLocation && (
-          <Mapbox.Camera
-            zoomLevel={12}
-            centerCoordinate={[
-              getCurrentLocation.coords.longitude,
-              getCurrentLocation.coords.latitude,
-            ]}
-            animationMode="flyTo"
-            animationDuration={4000}
+      {haveLocationPermission ? (
+        <Mapbox.MapView style={styles.map}>
+          {getCurrentLocation && (
+            <Mapbox.Camera
+              zoomLevel={12}
+              centerCoordinate={[
+                getCurrentLocation.coords.longitude,
+                getCurrentLocation.coords.latitude,
+              ]}
+              animationMode="flyTo"
+              animationDuration={4000}
+            />
+          )}
+          {userAroundMe?.map((position, index) => (
+            <Mapbox.MarkerView
+              key={`annotation-${index}`}
+              coordinate={position}>
+              <TouchableOpacity
+                onPress={() => {
+                  onMarkerPressed(position[0], position[1]);
+                }}>
+                <Icon name="location" size={38} color="red" />
+              </TouchableOpacity>
+            </Mapbox.MarkerView>
+          ))}
+          <Mapbox.UserLocation
+            visible={true}
+            minDisplacement={1000}
+            onUpdate={location => {
+              setCurrentLocation(location);
+            }}
           />
-        )}
-        {userAroundMe?.map((position, index) => (
-          <Mapbox.MarkerView key={`annotation-${index}`} coordinate={position}>
-            <TouchableOpacity
-              onPress={() => {
-                onMarkerPressed(position[0], position[1]);
-              }}>
-              <Icon name="location" size={38} color="red" />
-            </TouchableOpacity>
-          </Mapbox.MarkerView>
-        ))}
-        <Mapbox.UserLocation
-          visible={true}
-          minDisplacement={1000}
-          onUpdate={location => {
-            setCurrentLocation(location);
-          }}
-        />
-      </Mapbox.MapView>
+        </Mapbox.MapView>
+      ) : (
+        <View style={styles.warningContainer}>
+          <Text>Need location permission</Text>
+        </View>
+      )}
     </ScreenContainer>
   );
 }
@@ -95,5 +116,10 @@ const styles = StyleSheet.create({
   },
   annotationText: {
     color: 'red',
+  },
+  warningContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
