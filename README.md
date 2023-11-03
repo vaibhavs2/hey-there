@@ -1,6 +1,4 @@
-# Getting Started
-
-> **Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+prototype App to search people nearby on map and start chattting
 
 ## Step 1: Update your mapbox credentials
 
@@ -52,3 +50,10 @@ yarn ios
 If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
 
 This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+
+## Screenshots
+
+<img src="./screenshots/s1.png"  height="200" />
+<img src="./screenshots/s2.png"  height="200" />
+<img src="./screenshots/s3.png"  height="200" />
+<img src="./screenshots/s4.png"  height="200" />
